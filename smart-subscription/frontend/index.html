@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beyond Victories | Bespoke Subscriptions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .hero {
+            padding: 100px 0;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 24px;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            padding: 80px 0;
+        }
+        .feature-card {
+            padding: 32px;
+            text-align: left;
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Beyond<span class="gradient-text">Victories</span></a>
+            <div class="nav-links">
+                <a href="#how">How it Works</a>
+                <a href="plans.html">Pricing</a>
+                <a href="user/login.html" class="btn btn-secondary btn-sm">Login</a>
+                <a href="user/register.html" class="btn btn-primary btn-sm">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero">
+            <h1>Curation, <span class="gradient-text">Elevated.</span></h1>
+            <p>Stop settling for standard deliveries. Our expert connoisseurs meticulously curate a bespoke monthly package tailored to your exact refinement and taste.</p>
+            <div style="display: flex; gap: 16px; justify-content: center;">
+                <a href="user/register.html" class="btn btn-primary">Begin Your Profile</a>
+                <a href="#how" class="btn btn-secondary">Explore Features</a>
+            </div>
+        </section>
+
+        <section id="how" class="features">
+            <div class="glass-panel feature-card">
+                <div class="feature-icon">✨</div>
+                <h3>Bespoke Profiling</h3>
+                <p class="mt-2 text-muted">Complete an exclusive preference session to allow our team to build a profile of your discerning tastes.</p>
+            </div>
+            <div class="glass-panel feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Item Swapping</h3>
+                <p class="mt-2 text-muted">Preview your upcoming box. Don't like an item? Swap it out before it ships. No more wasted products.</p>
+            </div>
+            <div class="glass-panel feature-card">
+                <div class="feature-icon">⏸️</div>
+                <h3>Ultimate Flexibility</h3>
+                <p class="mt-2 text-muted">Going on vacation? Pause or skip a month with one click. Send a box as a gift. You are in control.</p>
+            </div>
+            <div class="glass-panel feature-card">
+                <div class="feature-icon">💎</div>
+                <h3>Loyalty Rewards</h3>
+                <p class="mt-2 text-muted">Earn points for every box received and every friend referred. Redeem points for free premium items.</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

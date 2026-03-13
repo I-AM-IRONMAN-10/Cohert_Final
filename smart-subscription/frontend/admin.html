@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Beyond Victories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Beyond<span class="gradient-text">Admin</span></a>
+            <div class="nav-links">
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-layout">
+        <aside class="sidebar">
+            <a href="admin.html" class="active">AI Analytics & Demand</a>
+            <a href="#inventory" onclick="loadInventory()">Inventory</a>
+            <a href="#plans" onclick="loadPlansAdmin()">Plans</a>
+        </aside>
+
+        <main id="mainContent">
+            <!-- System Analytics View (Default) -->
+            <div id="viewAI">
+                <h2 class="mb-8">AI Demand Prediction</h2>
+                <div class="glass-panel" style="padding: 24px;">
+                    <h3 class="mb-4">Next Month Forecast</h3>
+                    <p class="text-muted mb-8" id="aiMessage">Analyzing subscriber swap patterns...</p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px;">
+                        <div class="stat-card" style="background: rgba(15,23,42,0.8); border-radius: 8px; padding: 16px;">
+                            <span class="text-muted">Total Subscribers</span>
+                            <span class="stat-value" id="aiSubs">0</span>
+                        </div>
+                        <div class="stat-card" style="background: rgba(15,23,42,0.8); border-radius: 8px; padding: 16px;">
+                            <span class="text-muted">Est. Snacks Required</span>
+                            <span class="stat-value text-green" id="aiSnacks">0</span>
+                        </div>
+                        <div class="stat-card" style="background: rgba(15,23,42,0.8); border-radius: 8px; padding: 16px;">
+                            <span class="text-muted">Est. Skincare Required</span>
+                            <span class="stat-value" id="aiSkin">0</span>
+                        </div>
+                        <div class="stat-card" style="background: rgba(15,23,42,0.8); border-radius: 8px; padding: 16px;">
+                            <span class="text-muted">Est. Books/Gadgets</span>
+                            <span class="stat-value" id="aiBooks">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory View -->
+            <div id="viewInventory" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;" class="mb-4">
+                    <h2>Inventory Management</h2>
+                    <button class="btn btn-primary btn-sm" onclick="showAddForm()">+ Add Item</button>
+                </div>
+                
+                <form id="addInventoryForm" class="glass-panel mb-8" style="padding: 24px; display: none;">
+                    <h4>Add New Item</h4>
+                    <div style="display: flex; gap: 16px; align-items: flex-end; margin-top: 16px;">
+                        <div style="flex:1;">
+                            <label>Name</label>
+                            <input type="text" id="invName" class="form-control" required>
+                        </div>
+                        <div style="flex:1;">
+                            <label>Category</label>
+                            <select id="invCat" class="form-control" required>
+                                <option value="snacks">Snacks</option>
+                                <option value="skincare">Skincare</option>
+                                <option value="books">Books</option>
+                                <option value="gadgets">Gadgets</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label>Qty</label>
+                            <input type="number" id="invQty" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Save</button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('addInventoryForm').style.display='none'">Cancel</button>
+                    </div>
+                </form>
+
+                <div class="glass-panel" style="padding: 24px;">
+                    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <th style="padding: 12px 8px;">Product</th>
+                                <th style="padding: 12px 8px;">Category</th>
+                                <th style="padding: 12px 8px;">Qty</th>
+                                <th style="padding: 12px 8px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryList"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Plans View -->
+            <div id="viewPlans" style="display: none;">
+                 <div style="display: flex; justify-content: space-between; align-items: center;" class="mb-4">
+                    <h2>Plan Management</h2>
+                    <button class="btn btn-primary btn-sm" onclick="showAddPlanForm()">+ New Plan</button>
+                </div>
+                <!-- Similar CRUD structure here for plans... (Keeping simple for demo) -->
+                <div class="glass-panel" style="padding: 24px;">
+                    <p class="text-muted">Use API directly or implement form (similar to inventory) to manage plans.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        const user = requireAuth('admin');
+
+        function switchView(viewId) {
+            document.getElementById('viewAI').style.display = 'none';
+            document.getElementById('viewInventory').style.display = 'none';
+            document.getElementById('viewPlans').style.display = 'none';
+            document.getElementById(viewId).style.display = 'block';
+        }
+
+        async function initDashboard() {
+            try {
+                const ai = await apiCall('/api/admin/demand-prediction');
+                document.getElementById('aiMessage').innerText = ai.message;
+                document.getElementById('aiSubs').innerText = ai.totalSubscribersNextMonth;
+                document.getElementById('aiSnacks').innerText = ai.predictedDemand.snacks;
+                document.getElementById('aiSkin').innerText = ai.predictedDemand.skincare;
+                document.getElementById('aiBooks').innerText = ai.predictedDemand.books + ai.predictedDemand.gadgets;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadInventory() {
+            switchView('viewInventory');
+            try {
+                const items = await apiCall('/api/admin/inventory');
+                const tbody = document.getElementById('inventoryList');
+                tbody.innerHTML = items.map(item => `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 12px 8px;">${item.productName}</td>
+                        <td style="padding: 12px 8px;">${item.category}</td>
+                        <td style="padding: 12px 8px; color: ${item.quantity < item.reorderLevel ? '#ef4444' : 'inherit'}">${item.quantity}</td>
+                        <td style="padding: 12px 8px;">
+                            <button onclick="deleteItem('${item._id}')" class="btn btn-sm btn-secondary" style="color:#ef4444; border-color:#ef4444;">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function showAddForm() {
+            document.getElementById('addInventoryForm').style.display = 'block';
+        }
+
+        document.getElementById('addInventoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('invName').value;
+            const category = document.getElementById('invCat').value;
+            const qty = document.getElementById('invQty').value;
+
+            try {
+                await apiCall('/api/admin/inventory', 'POST', { productName: name, category, quantity: parseInt(qty) });
+                document.getElementById('addInventoryForm').reset();
+                loadInventory(); // refresh
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        async function deleteItem(id) {
+             if(confirm("Delete item?")) {
+                 try {
+                     await apiCall(`/api/admin/inventory/${id}`, 'DELETE');
+                     loadInventory();
+                 } catch(err) { alert(err.message); }
+             }
+        }
+
+        function loadPlansAdmin() {
+            switchView('viewPlans');
+        }
+
+        if(user) {
+            initDashboard();
+        }
+    </script>
+</body>
+</html>

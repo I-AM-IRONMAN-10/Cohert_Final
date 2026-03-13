@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Beyond Victories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Beyond<span class="gradient-text">Victories</span></a>
+            <div class="nav-links">
+                <a href="plans.html">Back to Plans</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 60px 20px; max-width: 600px;">
+        <div class="glass-panel" style="padding: 40px;">
+            <h2 class="mb-8">Complete Subcription</h2>
+            
+            <div id="checkoutDetails" style="margin-bottom: 32px; padding: 24px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <h3 id="planName">Loading...</h3>
+                <p class="text-muted mt-2" id="planDesc">Preparing your checkout details</p>
+                <div style="font-size: 1.5rem; font-weight: bold; margin-top: 16px;" id="planPrice">₹--</div>
+            </div>
+
+            <div class="form-group">
+                <label>Gift Subscription? (Optional)</label>
+                <input type="email" id="giftEmail" class="form-control" placeholder="Friend's Email (leave blank if for yourself)">
+            </div>
+
+            <button id="rzp-button" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 1.1rem;" disabled>
+                Initializing Payment...
+            </button>
+        </div>
+    </div>
+
+    <!-- Razorpay Checkou Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        const user = requireAuth();
+        let currentPlan = null;
+        let razorpayOrder = null;
+
+        async function initCheckout() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const planId = urlParams.get('planId');
+
+            if (!planId) {
+                alert("No plan selected!");
+                window.location.href = 'plans.html';
+                return;
+            }
+
+            try {
+                // Call backend to create Razorpay Order
+                const res = await apiCall('/api/subscriptions/checkout', 'POST', { planId });
+                currentPlan = res.plan;
+                razorpayOrder = res.order;
+
+                // Update UI
+                document.getElementById('planName').innerText = currentPlan.name;
+                document.getElementById('planDesc').innerText = currentPlan.duration + ' billing';
+                document.getElementById('planPrice').innerText = `₹${currentPlan.price}`;
+                
+                const btn = document.getElementById('rzp-button');
+                btn.innerText = `Pay ₹${currentPlan.price} securely via Razorpay`;
+                btn.disabled = false;
+
+            } catch (err) {
+                alert("Checkout init failed: " + err.message);
+            }
+        }
+
+        document.getElementById('rzp-button').addEventListener('click', function(e) {
+            const giftEmail = document.getElementById('giftEmail').value;
+            const isGift = giftEmail.length > 0;
+
+            const options = {
+                "key": "YOUR_RAZORPAY_KEY_ID", // Will be exposed from backend in a real app, mock for hackathon
+                "amount": razorpayOrder.amount, // in paise
+                "currency": "INR",
+                "name": "Beyond Victories",
+                "description": `Subscription to ${currentPlan.name}`,
+                "order_id": razorpayOrder.id,
+                "handler": async function (response) {
+                    try {
+                        const verifyRes = await apiCall('/api/subscriptions/verify', 'POST', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            planId: currentPlan._id,
+                            isGift,
+                            giftReceiverEmail: giftEmail
+                        });
+                        alert("Payment successful! Subscription Activated.");
+                        window.location.href = 'dashboard.html';
+                    } catch (err) {
+                        alert("Payment verification failed: " + err.message);
+                    }
+                },
+                "prefill": {
+                    "name": user.name,
+                    "email": user.email,
+                },
+                "theme": { "color": "#6366f1" }
+            };
+
+            const rzp = new Razorpay(options);
+            
+            // For hackathon/testing when Razopray mock fails
+            rzp.on('payment.failed', async function (response){
+                 const mockVerify = confirm("Payment failed (or Mocked). Do you want to force activate subscription for demo purposes?");
+                 if (mockVerify) {
+                     try {
+                        await apiCall('/api/subscriptions/verify', 'POST', {
+                            razorpay_order_id: "mock_order",
+                            planId: currentPlan._id,
+                            isGift,
+                            giftReceiverEmail: giftEmail
+                        });
+                        alert("Mock Subscription Activated!");
+                        window.location.href = 'dashboard.html';
+                     } catch(err) {
+                         alert(err.message);
+                     }
+                 }
+            });
+
+            rzp.open();
+        });
+
+        // Initialize on load
+        initCheckout();
+    </script>
+</body>
+</html>

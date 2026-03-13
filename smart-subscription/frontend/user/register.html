@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Beyond Victories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="../index.html" class="logo">Beyond<span class="gradient-text">Victories</span></a>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper">
+        <div class="glass-panel auth-card">
+            <h2>Create Account</h2>
+            <p class="subtitle">Join the future of subscriptions</p>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" class="form-control" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" class="form-control" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" required placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label for="referralCode">Referral Code (Optional)</label>
+                    <input type="text" id="referralCode" class="form-control" placeholder="ABC123XYZ">
+                    <small class="text-muted mt-2" style="display:block">Use a code to get 50 bonus points!</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">Continue to Quiz →</button>
+            </form>
+            
+            <p class="text-center mt-4">
+                Already have an account? <a href="login.html" style="color: var(--primary);">Login</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const referralCode = document.getElementById('referralCode').value;
+
+            try {
+                const data = await apiCall('/api/auth/register', 'POST', { name, email, password, referralCode });
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data));
+                window.location.href = 'preference-quiz.html';
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+    </script>
+</body>
+</html>

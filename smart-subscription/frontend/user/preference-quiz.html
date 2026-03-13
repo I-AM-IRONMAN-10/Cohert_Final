@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preference Quiz | Beyond Victories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .quiz-option {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(15, 23, 42, 0.5);
+            color: var(--text-muted);
+        }
+        .quiz-option.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+        }
+        .quiz-section {
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="../index.html" class="logo">Beyond<span class="gradient-text">Victories</span></a>
+            <div class="nav-links">
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 60px 20px; max-width: 800px;">
+        <div class="glass-panel" style="padding: 40px;">
+            <h2 class="text-center">Let's build your profile</h2>
+            <p class="subtitle text-center mb-8">Share your refined tastes so our connoisseurs can curate your perfect bespoke box.</p>
+
+            <form id="quizForm">
+                <div class="quiz-section">
+                    <h3>1. What are your favorite categories? (Select 1 or more)</h3>
+                    <div class="mt-4" id="categories">
+                        <div class="quiz-option" data-value="snacks">Snacks 🥨</div>
+                        <div class="quiz-option" data-value="skincare">Skincare ✨</div>
+                        <div class="quiz-option" data-value="books">Books 📚</div>
+                        <div class="quiz-option" data-value="gadgets">Gadgets 🎧</div>
+                    </div>
+                </div>
+
+                <div class="quiz-section">
+                    <h3>2. Any allergies or dietary restrictions?</h3>
+                    <div class="mt-4" id="allergies">
+                        <div class="quiz-option" data-value="nuts">Nuts 🥜</div>
+                        <div class="quiz-option" data-value="dairy">Dairy 🥛</div>
+                        <div class="quiz-option" data-value="gluten">Gluten 🍞</div>
+                        <div class="quiz-option" data-value="none">None of these ✅</div>
+                    </div>
+                </div>
+
+                <div class="quiz-section">
+                    <h3>3. Spice Tolerance?</h3>
+                    <select id="spiceTolerance" class="form-control" style="max-width: 300px; margin-top: 16px;">
+                        <option value="None">None (Keep it mild)</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High (Bring the heat! 🔥)</option>
+                    </select>
+                </div>
+
+                <div class="text-center pt-8">
+                    <button type="submit" class="btn btn-primary" style="font-size: 1.1rem; padding: 16px 40px;">Save Profile & Pick a Plan</button>
+                    <a href="../plans.html" class="btn btn-secondary" style="margin-left: 16px;">Skip for now</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        requireAuth();
+
+        // Toggle selections for visual quiz options
+        document.querySelectorAll('.quiz-option').forEach(el => {
+            el.addEventListener('click', function() {
+                this.classList.toggle('selected');
+            });
+        });
+
+        document.getElementById('quizForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const favoriteCategories = Array.from(document.querySelectorAll('#categories .quiz-option.selected')).map(el => el.dataset.value);
+            const allergies = Array.from(document.querySelectorAll('#allergies .quiz-option.selected')).map(el => el.dataset.value);
+            const spiceTolerance = document.getElementById('spiceTolerance').value;
+
+            if (favoriteCategories.length === 0) {
+                return alert("Please select at least one favorite category.");
+            }
+
+            try {
+                await apiCall('/api/users/preferences', 'PUT', { favoriteCategories, allergies, spiceTolerance });
+                alert("AI Profile saved successfully!");
+                window.location.href = '../plans.html';
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+    </script>
+</body>
+</html>

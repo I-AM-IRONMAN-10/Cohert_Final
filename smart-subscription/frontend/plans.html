@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Plans | Beyond Victories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            padding: 40px 0;
+        }
+        .plan-card {
+            padding: 40px 32px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+        .plan-card:hover {
+            transform: translateY(-8px);
+        }
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 24px 0 8px;
+            color: white;
+        }
+        .plan-duration {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .plan-features {
+            list-style: none;
+            margin-bottom: 32px;
+            text-align: left;
+            flex-grow: 1;
+        }
+        .plan-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .plan-features li::before {
+            content: '✓';
+            color: var(--primary);
+            margin-right: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Beyond<span class="gradient-text">Victories</span></a>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 60px 20px;">
+        <div class="text-center mb-8">
+            <h2>Choose your AI-curated subscription</h2>
+            <p class="subtitle text-muted mt-2">Cancel, pause, or swap items anytime.</p>
+        </div>
+
+        <div class="plans-grid" id="plansContainer">
+            <!-- Plans will be loaded here dynamically -->
+            <div class="glass-panel plan-card">
+                 <h3>Loading Plans...</h3>
+                 <p class="text-muted mt-4">Please wait</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function loadPlans() {
+            try {
+                const plans = await apiCall('/api/plans');
+                const container = document.getElementById('plansContainer');
+                
+                if (plans.length === 0) {
+                    container.innerHTML = '<div class="glass-panel plan-card" style="grid-column: 1/-1;"><h3>No plans available right now.</h3><p class="text-muted mt-4">Check back later or contact support.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                plans.forEach(plan => {
+                    const card = document.createElement('div');
+                    card.className = 'glass-panel plan-card';
+                    card.innerHTML = `
+                        <h3>${plan.name}</h3>
+                        <div class="plan-price">₹${plan.price}</div>
+                        <div class="plan-duration">per ${plan.duration || 'month'}</div>
+                        <ul class="plan-features">
+                            <li>AI Personalized Curation</li>
+                            <li>Swap Items Before Shipping</li>
+                            <li>Pause/Skip Support</li>
+                            <li>Loyalty Points Multiplier</li>
+                        </ul>
+                        <button onclick="subscribe('${plan._id}')" class="btn btn-primary" style="width: 100%;">Choose ${plan.name}</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+                document.getElementById('plansContainer').innerHTML = `<p style="color:red; text-align:center;">Failed to load plans: ${err.message}</p>`;
+            }
+        }
+
+        function subscribe(planId) {
+            const user = requireAuth();
+            if (user) {
+                window.location.href = `checkout.html?planId=${planId}`;
+            }
+        }
+
+        // Initialize
+        loadPlans();
+    </script>
+</body>
+</html>
