@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Box Preview | Beyond Victories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .item-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .item-card:hover {
+            border-color: rgba(255,255,255,0.2);
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .item-info h4 { margin-bottom: 4px; }
+        .swap-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .swap-modal.active {
+            display: flex;
+        }
+        .swap-content {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--glass-border);
+        }
+        .inventory-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 24px 0;
+        }
+        .inventory-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Beyond<span class="gradient-text">Victories</span></a>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-layout">
+        <aside class="sidebar">
+            <a href="dashboard.html">Overview</a>
+            <a href="upcoming-box.html" class="active">Upcoming Box (Swap)</a>
+            <a href="user/preference-quiz.html">Edit Preferences</a>
+        </aside>
+
+        <main>
+            <div class="glass-panel" style="padding: 32px;">
+                <div style="display: flex; justify-content: space-between; align-items: start;" class="mb-8">
+                    <div>
+                        <h2>Your Next Box Preview</h2>
+                        <p class="text-muted mt-2">Meticulously curated by our specialists just for you. Don't like something? Swap it out!</p>
+                    </div>
+                    <span class="status-badge" id="orderStatus">Loading...</span>
+                </div>
+
+                <div id="itemsContainer">
+                    <p class="text-muted">Loading your curated items...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Swap Modal -->
+    <div class="swap-modal" id="swapModal">
+        <div class="swap-content">
+            <h3>Swap Item</h3>
+            <p class="text-muted mt-2">Choose an alternative item from our real-time inventory.</p>
+            
+            <div class="inventory-list" id="modalInventory">
+                <p class="text-muted">Loading inventory...</p>
+            </div>
+            
+            <div style="text-align: right;">
+                <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        const user = requireAuth();
+        let currentOrderItemId = null;
+
+        if(user) {
+            loadUpcomingBox();
+        }
+
+        async function loadUpcomingBox() {
+            try {
+                const res = await apiCall('/api/orders/upcoming');
+                const container = document.getElementById('itemsContainer');
+                document.getElementById('orderStatus').innerText = `Status: ${res.order.packingStatus.toUpperCase()}`;
+                
+                if(res.items.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No items in this box yet.</p>';
+                } else {
+                    container.innerHTML = res.items.map(item => `
+                        <div class="item-card">
+                            <div class="item-info">
+                                <h4>${item.product ? item.product.productName : 'Unknown Product'}</h4>
+                                <div class="text-muted" style="font-size: 0.9rem;">
+                                    Category: ${item.product ? item.product.category : 'N/A'}
+                                    ${item.isSwapped ? '<span style="color:var(--secondary); margin-left:8px;">★ Custom Swapped</span>' : ''}
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="openSwapModal('${item._id}')" ${res.order.packingStatus !== 'pending' ? 'disabled' : ''}>
+                                Swap Item
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                document.getElementById('itemsContainer').innerHTML = `<p style="color:red;">${err.message}</p>`;
+                document.getElementById('orderStatus').innerText = 'No pending order';
+            }
+        }
+
+        async function openSwapModal(orderItemId) {
+            currentOrderItemId = orderItemId;
+            document.getElementById('swapModal').classList.add('active');
+            
+            try {
+                // Fetch public mock inventory or admin endpoint if open (using generic inventory logic)
+                const inventory = await apiCall('/api/admin/inventory'); // Note: usually admin only, for hackathon we might expose a public read-only route, let's assume it works or we need to mock
+                const list = document.getElementById('modalInventory');
+                
+                const available = inventory.filter(i => i.quantity > 0);
+                if (available.length === 0) {
+                    list.innerHTML = '<p class="text-muted">No alternative items in stock right now.</p>';
+                    return;
+                }
+
+                list.innerHTML = available.map(inv => `
+                    <div class="inventory-item">
+                        <div>
+                            <strong>${inv.productName}</strong>
+                            <div class="text-muted" style="font-size:0.8rem">${inv.category}</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="confirmSwap('${inv._id}')">Select</button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('modalInventory').innerHTML = `<p style="color:red;">Need staff/admin rights to view full inventory directly in this demo, or implement a public endpoint.</p>`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('swapModal').classList.remove('active');
+            currentOrderItemId = null;
+        }
+
+        async function confirmSwap(newProductId) {
+            try {
+                const res = await apiCall('/api/orders/upcoming/swap', 'POST', {
+                    orderItemId: currentOrderItemId,
+                    newProductId
+                });
+                alert("Item swapped successfully!");
+                closeModal();
+                loadUpcomingBox(); // refresh UI
+            } catch (err) {
+                alert("Swap failed: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Details | Beyond Victories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .order-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Beyond<span class="gradient-text">Staff</span></a>
+            <div class="nav-links">
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 60px 20px;">
+        <h2 class="mb-8">Pending Orders Hub</h2>
+
+        <div id="staffOrdersContainer">
+            <p class="text-muted">Loading pending orders...</p>
+        </div>
+    </div>
+
+    <!-- Tracking Modal -->
+    <div class="swap-modal" id="trackModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center;">
+        <div class="glass-panel" style="padding:32px; width:400px; max-width:90%;">
+            <h3>Mark as Shipped</h3>
+            <div class="form-group mt-4">
+                <label>Courier Tracking Number</label>
+                <input type="text" id="trackNo" class="form-control" placeholder="XYZ123456789">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+                <button class="btn btn-secondary" onclick="closeTrackModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmShip()">Ship Output</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        const user = requireAuth('staff'); // Or checking if staff/admin
+        
+        // Let admins also view staff portal if needed, api checking helps
+        if(!user || (user.role !== 'staff' && user.role !== 'admin')) {
+             if(user) { alert('Unauthorized'); window.location.href='index.html'; }
+        }
+
+        let currentShipOrderId = null;
+
+        async function loadPendingOrders() {
+            try {
+                const orders = await apiCall('/api/staff/orders/pending');
+                const container = document.getElementById('staffOrdersContainer');
+
+                if (orders.length === 0) {
+                    container.innerHTML = '<div class="glass-panel" style="padding:40px; text-align:center;"><h3>No pending orders!</h3><p class="text-muted">All caught up.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = orders.map(order => `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <h3 style="display:inline-block">Order #${order._id.substring(0,8)}</h3>
+                                ${order.isCustomized ? '<span class="status-badge" style="margin-left:8px; background:rgba(236, 72, 153, 0.2); color:#ec4899;">Custom Box</span>' : ''}
+                            </div>
+                            <div class="status-badge">${order.packingStatus.toUpperCase()}</div>
+                        </div>
+                        <div class="mb-4">
+                            <strong>Customer:</strong> ${order.user?.name || 'Unknown'} (${order.user?.email || 'N/A'})<br>
+                            <strong>Ordered:</strong> ${new Date(order.createdAt).toLocaleString()}
+                        </div>
+                        <div style="display:flex; gap:12px;">
+                            <button class="btn btn-primary" onclick="packOrder('${order._id}')">Mark as Packed</button>
+                            <button class="btn btn-secondary" onclick="openTrackModal('${order._id}')">Ship & Add Tracking</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('staffOrdersContainer').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+            }
+        }
+
+        async function packOrder(id) {
+            try {
+                await apiCall(`/api/staff/orders/${id}/pack`, 'PUT');
+                loadPendingOrders();
+            } catch (err) { alert(err.message); }
+        }
+
+        function openTrackModal(id) {
+            currentShipOrderId = id;
+            document.getElementById('trackModal').style.display = 'flex';
+        }
+
+        function closeTrackModal() {
+            document.getElementById('trackModal').style.display = 'none';
+            currentShipOrderId = null;
+        }
+
+        async function confirmShip() {
+            const track = document.getElementById('trackNo').value;
+            try {
+                await apiCall(`/api/staff/orders/${currentShipOrderId}/ship`, 'PUT', { trackingNumber: track });
+                alert("Order shipped!");
+                closeTrackModal();
+                loadPendingOrders();
+            } catch (err) { alert(err.message); }
+        }
+
+        if(user) {
+            loadPendingOrders();
+        }
+    </script>
+</body>
+</html>
